@@ -1,0 +1,11 @@
+ipykernel==6.29.5
+ipython==8.31.0
+jax==0.4.38
+jaxlib==0.4.38
+matplotlib==3.10.0
+numpy==2.2.1
+psutil==6.1.1
+PyYAML==6.0.2
+-e git+https://github.com/INMLe/rqcopt-mpo.git@95f0898f7baa6579de512eba8b00386bd6b05217#egg=rqcopt_mpo
+scipy==1.15.0
+tikzplotlib-patched @ file:///work/go68qah/tikzplotlib
