@@ -1,0 +1,13 @@
+hamiltonian: molecular
+molecule: LiH
+n_orbitals: 6
+n_repetitions: 1
+degree: 1
+n_id_layers: 0
+load: false
+normalize_reference: false
+ref_nbr: 2
+lr: 7e-3
+n_iter: 200
+optimizer: ADAM
+max_bondim: 128

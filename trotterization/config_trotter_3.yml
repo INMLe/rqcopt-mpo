@@ -1,0 +1,16 @@
+hamiltonian: ising-1d
+n_sites: 6
+degree: 
+- 1
+- 2
+- 4
+n_repetitions_start: 
+- 1
+- 1
+- 1
+n_repetitions_end: 
+- 11
+- 11
+- 8
+ref_nbr: 1
+truncation_tol: 128

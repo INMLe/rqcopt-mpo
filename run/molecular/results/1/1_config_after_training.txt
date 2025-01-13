@@ -1,0 +1,22 @@
+# Configuration of model after training
+
+hamiltonian: molecular
+molecule: LiH
+n_orbitals: 6
+n_repetitions: 1
+degree: 1
+n_id_layers: 0
+load: False
+normalize_reference: False
+ref_nbr: 2
+lr: 7e-3
+n_iter: 200
+optimizer: ADAM
+truncation_tol: 128
+script_path: /work/go68qah/rqcopt-mpo/run
+server: local
+model_nbr: 1
+model_dir: /work/go68qah/rqcopt-mpo/run/molecular/results/1
+reference_dir: /work/go68qah/rqcopt-mpo/run/molecular/reference
+n_sites: 6
+t: 1.0

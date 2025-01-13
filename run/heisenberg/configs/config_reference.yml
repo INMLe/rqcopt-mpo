@@ -1,0 +1,24 @@
+hamiltonian: heisenberg
+compute_maximum_time: false
+compute_reference: true
+n_sites: 6
+J: 
+- 1.
+- 1.
+- -0.5
+h: 
+- 0.75
+- 0.
+- 0.
+t: 0.25
+disordered: false
+degree: 4
+n_repetitions: 10
+max_bond_dim: 128
+compress: true
+degree_thres: 4
+n_rep_thres: 4
+fac_thres: 100
+reference_number_start: 1
+reference_seed: 
+- 0

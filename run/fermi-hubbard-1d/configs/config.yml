@@ -1,0 +1,15 @@
+hamiltonian: fermi-hubbard-1d
+n_sites: 6
+degree: 2
+n_repetitions: 1
+n_id_layers: 0
+t: 0.3
+disordered: false
+load: false
+load_reference: true
+normalize_reference: true
+ref_nbr: 1
+lr: 1e-3
+n_iter: 100
+optimizer: ADAM
+max_bondim: 128

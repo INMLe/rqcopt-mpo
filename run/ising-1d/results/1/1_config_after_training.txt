@@ -1,0 +1,22 @@
+# Configuration of model after training
+
+hamiltonian: ising-1d
+n_sites: 6
+degree: 2
+n_repetitions: 1
+t: 2.0
+disordered: False
+load: False
+load_reference: True
+normalize_reference: True
+ref_nbr: 1
+lr: 5e-2
+n_iter: 100
+optimizer: ADAM
+truncation_tol: 128
+script_path: /work/go68qah/rqcopt-mpo/run
+server: local
+model_nbr: 1
+model_dir: /work/go68qah/rqcopt-mpo/run/ising-1d/results/1
+reference_dir: /work/go68qah/rqcopt-mpo/run/ising-1d/reference
+n_id_layers: 0

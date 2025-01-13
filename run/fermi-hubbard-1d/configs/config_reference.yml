@@ -1,0 +1,15 @@
+hamiltonian: fermi-hubbard-1d
+compute_maximum_time: false
+compute_reference: true
+n_orbitals: 3
+degree: 4
+n_repetitions: 10
+t: 0.3
+max_bond_dim: 128
+degree_thres: 4
+n_rep_thres: 3
+fac_thres: 100
+disordered: false
+reference_number_start: 1
+reference_seed: 
+- 0
