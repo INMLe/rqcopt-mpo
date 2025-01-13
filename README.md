@@ -17,4 +17,6 @@ The examplary configurations are chosen such that the execution should not take 
 
 The folder ``plotting-results`` contains the numerical data and the script to generate the figures used in the publication.
 
+The folder ``trotterization`` contains a script to evaluate the (not-optimized) Trotter circuits.
+
 This repository accompanies: I. N. M. Le, S. Sun, and C. B. Mendl, Riemannian quantum circuit optimization based on matrix product operators, In preparation (2025).
