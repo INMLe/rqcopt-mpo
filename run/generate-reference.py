@@ -6,6 +6,7 @@ import yaml
 from time import time
 
 from jax.numpy import asarray
+from jax.scipy.linalg import expm
 from jax import config
 config.update("jax_enable_x64", True)
 
@@ -13,7 +14,8 @@ from rqcopt_mpo.save_model import save_reference
 from rqcopt_mpo.spin_systems import construct_ising_hamiltonian, construct_heisenberg_hamiltonian
 from rqcopt_mpo.fermionic_systems import construct_spinful_FH1D_hamiltonian
 from rqcopt_mpo.tn_helpers import (get_id_mpo, convert_mpo_to_mps, get_maximum_bond_dimension, 
-                                   get_left_canonical_mps, inner_product_mps, compress_mpo)
+                                   get_left_canonical_mps, inner_product_mps, compress_mpo,
+                                   get_mpo_from_matrix, get_maximum_bond_dimension)
 from rqcopt_mpo.tn_brickwall_methods import contract_layers_of_swap_network_with_mpo
 from rqcopt_mpo.brickwall_circuit import get_gates_per_layer, get_initial_gates
 
@@ -56,31 +58,46 @@ def compute_maximum_duration(config, **kwargs):
 def compute_reference(config, ref_batch, ref_seed, **kwargs):
     tstart = time()
 
-    # We start with an initial MPO with maximum bond dimension
+    use_full_rank_matrix = config.get('use_full_rank_matrix', False)
     mpo_id = get_id_mpo(config['n_sites'])
-    gates = get_initial_gates(config['n_sites'], config['t'], config['n_repetitions'], config['degree'], 
-                              hamiltonian=config['hamiltonian'], use_TN=True, **kwargs)
-    gates_per_layer, layer_is_odd = get_gates_per_layer(
-        gates, config['n_sites'], config["degree"], config["n_repetitions"], hamiltonian=config['hamiltonian'])
-    # Obtain MPO representation
-    bond_dim = config['max_bond_dim']
-    mpo_init = contract_layers_of_swap_network_with_mpo(
-        mpo_id, gates_per_layer, layer_is_odd, layer_is_left=True, max_bondim=bond_dim, get_norm=False)
+
+    if config['use_full_rank_matrix']:
+        H_mat, _, _, _ = construct_ising_hamiltonian(config['n_sites'], config['J'], config['g'], config['h'], 
+                                                        disordered=config['disordered'], get_matrix=True)
+        U_ref = expm(1j*config['t']*H_mat)  # Adjoint of the time evolution operator
+        mpo_init = get_mpo_from_matrix(U_ref)
+        bond_dim = get_maximum_bond_dimension(mpo_init)
+        print("Maximum bond dimension from full-rank matrix: ", bond_dim)
+
+    else:
+        # We start with an initial MPO with maximum bond dimension
+        gates = get_initial_gates(config['n_sites'], config['t'], config['n_repetitions'], config['degree'], 
+                                hamiltonian=config['hamiltonian'], use_TN=True, **kwargs)
+        gates_per_layer, layer_is_odd = get_gates_per_layer(
+            gates, config['n_sites'], config["degree"], config["n_repetitions"], hamiltonian=config['hamiltonian'])
+        bond_dim = config['max_bond_dim']
+        # Obtain MPO representation
+        mpo_init = contract_layers_of_swap_network_with_mpo(
+            mpo_id, gates_per_layer, layer_is_odd, layer_is_left=True, max_bondim=bond_dim, get_norm=False)
 
     compress = config.get('compress', True)
     if compress:
-        degree_thres = config.get('degree_thres', 2)
-        n_rep_thres = config.get('n_rep_thres', 10)
-        gates_thres = get_initial_gates(
-            config['n_sites'], config['t'], n_rep_thres, degree=degree_thres, hamiltonian=config['hamiltonian'], use_TN=True, **kwargs)
-        gates_per_layer_thres, layer_is_odd_thres = get_gates_per_layer(
-            gates_thres, config['n_sites'], degree=degree_thres, n_repetitions=n_rep_thres, hamiltonian=config['hamiltonian'])
-        # Obtain MPO representation
-        mpo_thres = contract_layers_of_swap_network_with_mpo(
-            mpo_id, gates_per_layer_thres, layer_is_odd_thres, layer_is_left=True, max_bondim=config['max_bond_dim'], get_norm=False)
-        err_threshold = compute_error_mpo(mpo_thres, mpo_init)
-        fac_thres = config.get('fac_thres', 500)
-        err_threshold = err_threshold/fac_thres
+        err_threshold = config.get('err_thres', None)
+        if type(err_threshold) is type(None):
+            degree_thres = config.get('degree_thres', 2)
+            n_rep_thres = config.get('n_rep_thres', 10)
+            gates_thres = get_initial_gates(
+                config['n_sites'], config['t'], n_rep_thres, degree=degree_thres, hamiltonian=config['hamiltonian'], use_TN=True, **kwargs)
+            gates_per_layer_thres, layer_is_odd_thres = get_gates_per_layer(
+                gates_thres, config['n_sites'], degree=degree_thres, n_repetitions=n_rep_thres, hamiltonian=config['hamiltonian'])
+            # Obtain MPO representation
+            mpo_thres = contract_layers_of_swap_network_with_mpo(
+                mpo_id, gates_per_layer_thres, layer_is_odd_thres, layer_is_left=True, max_bondim=bond_dim, get_norm=False)
+            err_threshold = compute_error_mpo(mpo_thres, mpo_init)
+            fac_thres = config.get('fac_thres', 500)
+            err_threshold = err_threshold/fac_thres
+        else:
+            err_threshold = float(err_threshold)
         print("\t Error threshold = ", err_threshold)
 
         # Compress the initial MPO down to convergence criteria
