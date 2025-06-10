@@ -19,7 +19,7 @@ from rqcopt_mpo.brickwall_circuit import *
 def cost(Vlist_TN, U_mpo, n_sites, degree, n_repetitions, n_layers, truncation_tol, hamiltonian):
     scaling_F = int(n_sites/2)
     # Normalize the reference
-    mpo = tn_methods.left_to_right_QR_sweep(U_mpo, get_norm=False, normalize=True)
+    mpo = tn_helpers.left_to_right_QR_sweep(U_mpo, get_norm=False, normalize=True)
     tr = tn_brickwall_methods.fully_contract_swap_network_mpo(
         Vlist_TN, mpo, degree, n_repetitions, 0, n_layers, truncation_tol, hamiltonian)
     cost = jnp.sqrt(2 - 2*tr.real/2**scaling_F)  # Frobenius norm
@@ -29,8 +29,7 @@ def main():
     # Load the config file
     with open(argv[1], 'r') as f:
         config = safe_load(f)
-
-
+        
     # Load the reference
     current_path=os.getcwd()
     path = os.path.abspath(os.path.join(current_path, os.pardir))

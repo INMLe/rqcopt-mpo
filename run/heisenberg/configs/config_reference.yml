@@ -1,6 +1,7 @@
 hamiltonian: heisenberg
 compute_maximum_time: false
 compute_reference: true
+use_full_rank_matrix: false
 n_sites: 6
 J: 
 - 1.
@@ -18,7 +19,7 @@ max_bond_dim: 128
 compress: true
 degree_thres: 4
 n_rep_thres: 4
-fac_thres: 100
+fac_thres: 500
 reference_number_start: 1
 reference_seed: 
 - 0

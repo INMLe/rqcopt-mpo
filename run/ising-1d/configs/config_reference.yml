@@ -1,6 +1,7 @@
 hamiltonian: ising-1d
 compute_maximum_time: false
 compute_reference: true
+use_full_rank_matrix: false
 n_sites: 6
 J: 1.
 g: 0.75

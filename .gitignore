@@ -169,3 +169,5 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
+run/ising-1d/configs/config_reference_haoti.yml
+run/ising-1d/reference/8_reference_1.pkl

@@ -438,9 +438,10 @@ def get_left_canonical_mps(mps, normalize=False, get_norm=False):
 
         # Get norm
         nrm = R.reshape(-1)[0]
-        if nrm<0: nrm=-nrm
+        if nrm.real<0: nrm=-nrm; coeff=-1
+        else: coeff=1
         # Normalize
-        if normalize: left_canonical_mps.append(Q.reshape(shape[:-1]+(Q.shape[-1],)))
+        if normalize: left_canonical_mps.append(coeff*Q.reshape(shape[:-1]+(Q.shape[-1],)))
         else: left_canonical_mps.append(updated_mps[-1])
         if get_norm: return left_canonical_mps, nrm.real
     else:

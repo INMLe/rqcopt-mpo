@@ -3,8 +3,6 @@ from time import time
 import os
 import yaml
 
-from time import time
-
 from jax.numpy import asarray
 from jax.scipy.linalg import expm
 from jax import config
@@ -32,7 +30,7 @@ def compute_error_mpo(mpo1, mpo2):
     mps2_nrmd = get_left_canonical_mps(mps2, normalize=True, get_norm=False)
     # Compute overlap
     tr = inner_product_mps(mps1_nrmd, mps2_nrmd)
-    err = 2 - 2*tr.real  # Frobenius norm
+    err = 2. - 2.*tr.real  # Frobenius norm
     return err
 
 def compute_maximum_duration(config, **kwargs):
@@ -57,14 +55,10 @@ def compute_maximum_duration(config, **kwargs):
     
 def compute_reference(config, ref_batch, ref_seed, **kwargs):
     tstart = time()
-
-    use_full_rank_matrix = config.get('use_full_rank_matrix', False)
     mpo_id = get_id_mpo(config['n_sites'])
 
     if config['use_full_rank_matrix']:
-        H_mat, _, _, _ = construct_ising_hamiltonian(config['n_sites'], config['J'], config['g'], config['h'], 
-                                                        disordered=config['disordered'], get_matrix=True)
-        U_ref = expm(1j*config['t']*H_mat)  # Adjoint of the time evolution operator
+        U_ref = expm(-1j*config['t']*kwargs['H_mat'])  # Adjoint of the time evolution operator
         mpo_init = get_mpo_from_matrix(U_ref)
         bond_dim = get_maximum_bond_dimension(mpo_init)
         print("Maximum bond dimension from full-rank matrix: ", bond_dim)
@@ -78,7 +72,7 @@ def compute_reference(config, ref_batch, ref_seed, **kwargs):
         bond_dim = config['max_bond_dim']
         # Obtain MPO representation
         mpo_init = contract_layers_of_swap_network_with_mpo(
-            mpo_id, gates_per_layer, layer_is_odd, layer_is_left=True, max_bondim=bond_dim, get_norm=False)
+            mpo_id, gates_per_layer, layer_is_odd, layer_is_left=True, max_bondim=config['max_bond_dim'], get_norm=False)
 
     compress = config.get('compress', True)
     if compress:
@@ -86,13 +80,18 @@ def compute_reference(config, ref_batch, ref_seed, **kwargs):
         if type(err_threshold) is type(None):
             degree_thres = config.get('degree_thres', 2)
             n_rep_thres = config.get('n_rep_thres', 10)
+            print('degree_thres: ', degree_thres)
+            print('n_rep_thres: ', n_rep_thres)
             gates_thres = get_initial_gates(
-                config['n_sites'], config['t'], n_rep_thres, degree=degree_thres, hamiltonian=config['hamiltonian'], use_TN=True, **kwargs)
+                config['n_sites'], config['t'], n_repetitions=n_rep_thres, degree=degree_thres, 
+                hamiltonian=config['hamiltonian'], use_TN=True, **kwargs)
             gates_per_layer_thres, layer_is_odd_thres = get_gates_per_layer(
-                gates_thres, config['n_sites'], degree=degree_thres, n_repetitions=n_rep_thres, hamiltonian=config['hamiltonian'])
+                gates_thres, config['n_sites'], degree=degree_thres, n_repetitions=n_rep_thres, 
+                hamiltonian=config['hamiltonian'])
             # Obtain MPO representation
             mpo_thres = contract_layers_of_swap_network_with_mpo(
-                mpo_id, gates_per_layer_thres, layer_is_odd_thres, layer_is_left=True, max_bondim=bond_dim, get_norm=False)
+                mpo_id, gates_per_layer_thres, layer_is_odd_thres, layer_is_left=True, 
+                max_bondim=config['max_bond_dim'], get_norm=False)
             err_threshold = compute_error_mpo(mpo_thres, mpo_init)
             fac_thres = config.get('fac_thres', 500)
             err_threshold = err_threshold/fac_thres
@@ -124,7 +123,6 @@ def compute_reference(config, ref_batch, ref_seed, **kwargs):
                        err_threshold=err_threshold, hamiltonian=config['hamiltonian'], H=None, ref_seed=ref_seed, ref_nbr=ref_batch, **kwargs)
     
     get_duration(tstart, program='cycle')
-    print('\n\n')
 
 def main():
     t0 = time()
@@ -135,6 +133,7 @@ def main():
     # Set modus
     if 'compute_maximum_time' not in config.keys(): config['compute_maximum_time']=False
     if 'compute_reference' not in config.keys(): config['compute_reference']=False
+    if 'use_full_rank_matrix' not in config.keys(): config['use_full_rank_matrix']=False
     if config['hamiltonian']=='fermi-hubbard-1d' and 'n_sites' not in config.keys(): config['n_sites']=2*config['n_orbitals']
 
     # Set the reference number
@@ -148,26 +147,26 @@ def main():
         disordered, config['hamiltonian'], config['n_sites']))
     if config['hamiltonian']=='fermi-hubbard-1d':
         for ref_batch, ref_seed in zip(ref_batches, config["reference_seed"]):
-            _, T, V = construct_spinful_FH1D_hamiltonian(
-                config['n_orbitals'], get_matrix=False, disordered=config['disordered'], reference_seed=ref_seed)    
+            H_mat, T, V = construct_spinful_FH1D_hamiltonian(
+                config['n_orbitals'], get_matrix=config['use_full_rank_matrix'], disordered=config['disordered'], reference_seed=ref_seed)    
             if config['compute_maximum_time']: compute_maximum_duration(config, T=-T, V=-V)
-            if config['compute_reference']: compute_reference(config, ref_batch, ref_seed, T=-T, V=-V)
+            if config['compute_reference']: compute_reference(config, ref_batch, ref_seed, T=-T, V=-V, H_mat=-H_mat)
 
     elif config['hamiltonian']=='ising-1d':
         for ref_batch, ref_seed in zip(ref_batches, config["reference_seed"]):
             J, g, h = -config['J'], -config['g'], -config['h']
-            _, Js, gs, hs = construct_ising_hamiltonian(config['n_sites'], J, g, h, disordered=config['disordered'], 
-                                                        get_matrix=False, reference_seed=ref_seed)
+            H_mat, Js, gs, hs = construct_ising_hamiltonian(config['n_sites'], J, g, h, disordered=config['disordered'], 
+                                                        get_matrix=config['use_full_rank_matrix'], reference_seed=ref_seed)
             if config['compute_maximum_time']: compute_maximum_duration(config, J=Js, g=gs, h=hs)
-            if config['compute_reference']: compute_reference(config, ref_batch, ref_seed, J=Js, g=gs, h=hs)
+            if config['compute_reference']: compute_reference(config, ref_batch, ref_seed, J=Js, g=gs, h=hs, H_mat=H_mat)
 
     elif config['hamiltonian']=='heisenberg':
         for ref_batch, ref_seed in zip(ref_batches, config["reference_seed"]):
             J, h = -asarray(config['J']), -asarray(config['h'])
-            _, Js, hs = construct_heisenberg_hamiltonian(config['n_sites'], J, h, disordered=config['disordered'], 
-                                                         get_matrix=False, reference_seed=ref_seed)
+            H_mat, Js, hs = construct_heisenberg_hamiltonian(config['n_sites'], J, h, disordered=config['disordered'], 
+                                                         get_matrix=config['use_full_rank_matrix'], reference_seed=ref_seed)
             if config['compute_maximum_time']: compute_maximum_duration(config, J=Js, h=hs)
-            if config['compute_reference']: compute_reference(config, ref_batch, ref_seed, J=Js, h=hs)
+            if config['compute_reference']: compute_reference(config, ref_batch, ref_seed, J=Js, h=hs, H_mat=H_mat)
 
     get_duration(t0)
 

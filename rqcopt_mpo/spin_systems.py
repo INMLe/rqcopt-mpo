@@ -75,8 +75,6 @@ def construct_heisenberg_hamiltonian(N, J=[1,1,-.5], h=[.75,0,0], disordered=Fal
             hamiltonian += operator_chain(N, N-1, I, hs[N-1,i]*sigma[i])
     return hamiltonian, Js, hs
 
-
-
 def construct_ising_hamiltonian(N, J=1., g=0.75, h=0.6, disordered=False, get_matrix=False, reference_seed=123456):
     seed(reference_seed)
     if disordered: 
@@ -92,12 +90,13 @@ def construct_ising_hamiltonian(N, J=1., g=0.75, h=0.6, disordered=False, get_ma
         Js = Js.at[j,j+1].set(_Js[j])
         if get_matrix:
             hamiltonian += operator_chain(N, j, I, _Js[j]*ZZ, single_qubit=False)
-            hamiltonian += (operator_chain(N, j, I, gs[j]*X) + operator_chain(N, j, I, hs[j]*Z))
-    if get_matrix: hamiltonian += (operator_chain(N, N-1, I, gs[N-1]*X) + operator_chain(N, N-1, I, hs[N-1]*Z))
+            hamiltonian += operator_chain(N, j, I, gs[j]*X) 
+            hamiltonian += operator_chain(N, j, I, hs[j]*Z)
+    if get_matrix: 
+        hamiltonian += operator_chain(N, N-1, I, gs[N-1]*X) 
+        hamiltonian += operator_chain(N, N-1, I, hs[N-1]*Z)
     
     return hamiltonian, Js, gs, hs
-
-
 
 def get_brickwall_trotter_gates_spin_chain(t, n_sites, n_repetitions=1, degree=2, hamiltonian='ising-1d', use_TN=False, **kwargs):
     """

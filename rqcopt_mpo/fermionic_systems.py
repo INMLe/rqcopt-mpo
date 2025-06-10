@@ -74,7 +74,7 @@ def construct_spinful_FH1D_hamiltonian(n_orbitals, get_matrix=True, disordered=F
             u_coeffs = u_coeff*ones((n_orbitals,))
         
     if get_matrix: H = zeros((2**n_spin_orbitals, 2**n_spin_orbitals))
-    else: H = None
+    else: H = 0.
 
     V = zeros((n_orbitals,))
     T = zeros((n_orbitals,n_orbitals))
